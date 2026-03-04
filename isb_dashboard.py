@@ -7,18 +7,28 @@ from sklearn.metrics import mean_absolute_error
 
 st.set_page_config(page_title='ISB Traffic Dashboard', layout='wide')
 
-st.title('🏫 ISB Website Traffic Forecast Dashboard')
+st.title('ISB Website Traffic Forecast Dashboard')
 st.markdown('Interactive traffic forecasting powered by Machine Learning')
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv('gsc_pages_top50.csv')
+    df = pd.read_csv('/Users/20214/Desktop/gsc_pages_daily.csv')
     df['date'] = pd.to_datetime(df['date'])
     return df
 
 df = load_data()
 
 st.sidebar.header('Controls')
+
+def is_forecastable(page):
+    page_df = df[df['page'] == page]['clicks']
+    if len(page_df) < 200:
+        return False
+    if page_df.mean() < 2:
+        return False
+    if page_df.max() > page_df.mean() * 10:
+        return False
+    return True
 
 top_pages = (
     df.groupby('page')['clicks']
@@ -27,6 +37,7 @@ top_pages = (
     .head(50)
     .index.tolist()
 )
+top_pages = [p for p in top_pages if is_forecastable(p)]
 
 def clean_label(url):
     url = url.replace('https://www.isb.ac.th', '')
@@ -63,7 +74,6 @@ def run_forecast(page, metric, forecast_days):
     if len(page_df) < 30:
         return None, None, None, None
 
-    # Remove outlier spikes before training
     mean = page_df['y'].mean()
     std  = page_df['y'].std()
     page_df['y'] = page_df['y'].clip(upper=mean + 3 * std)
@@ -131,7 +141,12 @@ else:
         yaxis_title=metric.capitalize(),
         hovermode='x unified',
         height=500,
-        legend=dict(orientation='h', yanchor='bottom', y=1.02)
+        legend=dict(orientation='h', yanchor='bottom', y=1.02),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family='Arial', size=13, color='#2c2c2c'),
+        xaxis=dict(showgrid=True, gridcolor='#f0f0f0'),
+        yaxis=dict(showgrid=True, gridcolor='#f0f0f0'),
     )
 
     st.plotly_chart(fig, use_container_width=True)
@@ -144,7 +159,7 @@ else:
 
     st.markdown('---')
 
-    st.markdown('### 📅 Monthly Breakdown')
+    st.markdown('### Monthly Breakdown')
     monthly = future_only.copy()
     monthly['Month'] = monthly['ds'].dt.strftime('%B %Y')
     monthly_summary  = monthly.groupby('Month').agg(
@@ -156,7 +171,7 @@ else:
 
     st.markdown('---')
 
-    st.markdown('### 📆 Weekly Traffic Pattern')
+    st.markdown('### Weekly Traffic Pattern')
     weekly        = forecast[['ds', 'weekly']].copy()
     weekly['day'] = pd.to_datetime(weekly['ds']).dt.day_name()
     avg_weekly    = weekly.groupby('day')['weekly'].mean().reindex(
@@ -166,18 +181,23 @@ else:
     fig2 = go.Figure(go.Bar(
         x=avg_weekly.index,
         y=avg_weekly.values,
-        marker_color=['steelblue' if d not in ['Saturday','Sunday'] else 'coral' for d in avg_weekly.index]
+        marker_color=['#2c5f8a' if d not in ['Saturday','Sunday'] else '#c0392b' for d in avg_weekly.index]
     ))
     fig2.update_layout(
         title='Which days get the most traffic?',
         yaxis_title='Seasonality Effect',
-        height=350
+        height=350,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family='Arial', size=13, color='#2c2c2c'),
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=True, gridcolor='#f0f0f0'),
     )
     st.plotly_chart(fig2, use_container_width=True)
 
     st.markdown('---')
 
-    st.markdown('### 📈 Yearly Traffic Pattern')
+    st.markdown('### Yearly Traffic Pattern')
     yearly          = forecast[['ds', 'yearly']].copy()
     yearly['month'] = pd.to_datetime(yearly['ds']).dt.strftime('%b')
     avg_yearly      = yearly.groupby('month')['yearly'].mean().reindex(
@@ -187,11 +207,16 @@ else:
     fig3 = go.Figure(go.Bar(
         x=avg_yearly.index,
         y=avg_yearly.values,
-        marker_color='steelblue'
+        marker_color='#2c5f8a'
     ))
     fig3.update_layout(
         title='Which months get the most traffic?',
         yaxis_title='Seasonality Effect',
-        height=350
+        height=350,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family='Arial', size=13, color='#2c2c2c'),
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=True, gridcolor='#f0f0f0'),
     )
     st.plotly_chart(fig3, use_container_width=True)
