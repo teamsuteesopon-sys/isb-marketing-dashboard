@@ -13,7 +13,19 @@ st.markdown('Interactive traffic forecasting powered by Machine Learning')
 # ── Load data ─────────────────────────────────────────────────────
 @st.cache_data
 def load_data():
-    df = pd.read_csv('/Users/20214/Desktop/gsc_pages_daily.csv')
+    df = pd.read_csv('gsc_pages_top50.csv')
+```
+
+Then scroll down and click **Commit changes**.
+
+After that you also need to add a `requirements.txt` file. Click **Add file** → **Create new file**, name it `requirements.txt` and paste this:
+```
+streamlit
+plotly
+prophet
+scikit-learn
+pandas
+numpy
     df['date'] = pd.to_datetime(df['date'])
     return df
 
