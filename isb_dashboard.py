@@ -12,7 +12,7 @@ st.markdown('Interactive traffic forecasting powered by Machine Learning')
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv('/Users/20214/Desktop/gsc_pages_daily.csv')
+    df = pd.read_csv('gsc_pages_top50.csv')
     df['date'] = pd.to_datetime(df['date'])
     return df
 
